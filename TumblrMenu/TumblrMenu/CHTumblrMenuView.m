@@ -24,7 +24,6 @@
 //  THE SOFTWARE.
 
 #import "CHTumblrMenuView.h"
-#import "XQThumblrMenuGuideView.h"
 #import "CompactConstraint.h"
 
 #define CHTumblrMenuViewTag 1999
@@ -84,8 +83,6 @@
     UIView *backgroundView_;
     NSMutableArray *buttons_;
     UIImageView *dismissIcon_;
-    
-    XQThumblrMenuGuideView *guideView_;
 }
 
 - (id)init {
@@ -121,18 +118,6 @@
                                                  @"dismissIcon_.centerX = backgroundView_.centerX"]
                                        metrics:nil
                                          views:NSDictionaryOfVariableBindings(backgroundView_, dismissIcon_)];
-        
-        NSArray *nib = [[NSBundle mainBundle] loadNibNamed:@"XQThumblrMenuGuideView" owner:self options:nil];
-        guideView_ = (XQThumblrMenuGuideView *)[nib objectAtIndex:0];
-        [guideView_ setTranslatesAutoresizingMaskIntoConstraints:NO];
-        [self addSubview:guideView_];
-        [self addCompactConstraints:@[@"guideView_.top = self.top",
-                                      @"guideView_.bottom = self.bottom",
-                                      @"guideView_.left = self.left",
-                                      @"guideView_.right = self.right"]
-                            metrics:nil
-                              views:NSDictionaryOfVariableBindings(self,guideView_)];
-        guideView_.hidden = YES;
     }
     return self;
 }
@@ -150,8 +135,6 @@
     [self addSubview:button];
     
     [buttons_ addObject:button];
-    
-    [self bringSubviewToFront:guideView_];
 }
 
 - (CGRect)frameForButtonAtIndex:(NSUInteger)index
@@ -378,9 +361,4 @@
     }
 }
 
-#pragma mark - addGuideView
--(void)addGuideView
-{
-    guideView_.hidden = NO;
-}
 @end

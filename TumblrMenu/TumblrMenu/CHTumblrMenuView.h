@@ -42,7 +42,6 @@ typedef void (^CHTumblrMenuViewSelectedBlock)(void);
 - (void)setThumblrMeunuDelegate:(id)delegate;
 - (void)addMenuItemWithTitle:(NSString*)title andIcon:(UIImage*)icon andSelectedBlock:(CHTumblrMenuViewSelectedBlock)block;
 - (void)show;
-- (void)addGuideView;
 
 @end
 
