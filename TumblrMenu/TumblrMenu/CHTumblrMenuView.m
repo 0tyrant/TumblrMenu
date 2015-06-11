@@ -24,8 +24,11 @@
 //  THE SOFTWARE.
 
 #import "CHTumblrMenuView.h"
+#import "XQThumblrMenuGuideView.h"
+#import "CompactConstraint.h"
+
 #define CHTumblrMenuViewTag 1999
-#define CHTumblrMenuViewImageHeight 90
+#define CHTumblrMenuViewImageHeight 63
 #define CHTumblrMenuViewTitleHeight 20
 #define CHTumblrMenuViewVerticalPadding 10
 #define CHTumblrMenuViewHorizontalMargin 10
@@ -34,96 +37,141 @@
 #define CHTumblrMenuViewAnimationTime 0.36
 #define CHTumblrMenuViewAnimationInterval (CHTumblrMenuViewAnimationTime / 5)
 
-#define TumblrBlue [UIColor colorWithRed:45/255.0f green:68/255.0f blue:94/255.0f alpha:1.0]
-
-@interface CHTumblrMenuItemButton : UIButton
-+ (id)TumblrMenuItemButtonWithTitle:(NSString*)title andIcon:(UIImage*)icon andSelectedBlock:(CHTumblrMenuViewSelectedBlock)block;
+@interface CHTumblrMenuItemButton : UIControl
+- (id)initWithTitle:(NSString*)title andIcon:(UIImage*)icon andSelectedBlock:(CHTumblrMenuViewSelectedBlock)block;
 @property(nonatomic,copy)CHTumblrMenuViewSelectedBlock selectedBlock;
 @end
 
 @implementation CHTumblrMenuItemButton
-
-+ (id)TumblrMenuItemButtonWithTitle:(NSString*)title andIcon:(UIImage*)icon andSelectedBlock:(CHTumblrMenuViewSelectedBlock)block
 {
-    CHTumblrMenuItemButton *button = [CHTumblrMenuItemButton buttonWithType:UIButtonTypeCustom];
-    [button setImage:icon forState:UIControlStateNormal];
-    
-    [button setTitle:title forState:UIControlStateNormal];
-    [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    button.titleLabel.textAlignment = NSTextAlignmentCenter;
-    
-    button.selectedBlock = block;
- 
-    return button;
+    UIImageView *iconView_;
+    UILabel *titleLabel_;
+
 }
-
-
-- (void)layoutSubviews
+- (id)initWithTitle:(NSString*)title andIcon:(UIImage*)icon andSelectedBlock:(CHTumblrMenuViewSelectedBlock)block
 {
-    [super layoutSubviews];
-    self.imageView.frame = CGRectMake(0, 0, CHTumblrMenuViewImageHeight, CHTumblrMenuViewImageHeight);
-    self.titleLabel.frame = CGRectMake(0, CHTumblrMenuViewImageHeight, CHTumblrMenuViewImageHeight, CHTumblrMenuViewTitleHeight);
-}
-@end
-
-@implementation CHTumblrMenuView
-{
-    UIImageView *backgroundView_;
-    NSMutableArray *buttons_;
-}
-@synthesize backgroundImgView = backgroundView_;
-
-
-- (id)initWithFrame:(CGRect)frame
-{
-    self = [super initWithFrame:frame];
+    self = [super init];
     if (self) {
-        // Initialization code
-        UITapGestureRecognizer *ges = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismiss:)];
-        ges.delegate = self;
-        [self addGestureRecognizer:ges];
-        self.backgroundColor = [UIColor clearColor];
-        backgroundView_ = [[UIImageView alloc] initWithFrame:self.bounds];
-        backgroundView_.backgroundColor = TumblrBlue;
-        backgroundView_.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-        [self addSubview:backgroundView_];
-        buttons_ = [[NSMutableArray alloc] initWithCapacity:6];
-        
-        
+        iconView_ = [UIImageView new];
+        iconView_.image = icon;
+        titleLabel_ = [UILabel new];
+        titleLabel_.textAlignment = NSTextAlignmentCenter;
+        titleLabel_.backgroundColor = [UIColor clearColor];
+        titleLabel_.textColor = [UIColor whiteColor];
+        titleLabel_.text = title;
+        titleLabel_.font = [UIFont systemFontOfSize:14.0f];
+        _selectedBlock = block;
+        [self addSubview:iconView_];
+        [self addSubview:titleLabel_];
     }
     return self;
 }
 
+- (void)setFrame:(CGRect)frame
+{
+    [super setFrame:frame];
+    
+    iconView_.frame = CGRectMake(0, 0, CHTumblrMenuViewImageHeight, CHTumblrMenuViewImageHeight);
+    
+    titleLabel_.frame = CGRectMake(0, CHTumblrMenuViewImageHeight, CHTumblrMenuViewImageHeight, CHTumblrMenuViewTitleHeight);
+}
+
+
+@end
+
+@implementation CHTumblrMenuView
+{
+    UIView *backgroundView_;
+    NSMutableArray *buttons_;
+    UIImageView *dismissIcon_;
+    
+    XQThumblrMenuGuideView *guideView_;
+}
+
+- (id)init {
+    if (self = [super init]) {
+        [self setBackgroundColor:[UIColor clearColor]];
+        
+        ges = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismiss:)];
+        ges.delegate = self;
+        
+        buttons_ = [[NSMutableArray alloc] initWithCapacity:4];
+        
+        _animCount = 0;
+        
+        backgroundView_ = [[UIView alloc] init];
+        [backgroundView_ setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [backgroundView_ setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.7]];
+        [self addSubview:backgroundView_];
+        [self addCompactConstraints:@[@"backgroundView_.top = self.top",
+                                      @"backgroundView_.bottom = self.bottom",
+                                      @"backgroundView_.left = self.left",
+                                      @"backgroundView_.right = self.right"]
+                            metrics:nil
+                              views:NSDictionaryOfVariableBindings(self, backgroundView_)];
+        
+        dismissIcon_ = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"tabbar_item_add_down"]];
+        [dismissIcon_ setContentMode:UIViewContentModeCenter];
+        [dismissIcon_ setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [dismissIcon_ addCompactConstraint:@"dismissIcon_.height = 49"
+                                    metrics:nil
+                                      views:NSDictionaryOfVariableBindings(dismissIcon_)];
+        [backgroundView_ addSubview:dismissIcon_];
+        [backgroundView_ addCompactConstraints:@[@"dismissIcon_.bottom = backgroundView_.bottom",
+                                                 @"dismissIcon_.centerX = backgroundView_.centerX"]
+                                       metrics:nil
+                                         views:NSDictionaryOfVariableBindings(backgroundView_, dismissIcon_)];
+        
+        NSArray *nib = [[NSBundle mainBundle] loadNibNamed:@"XQThumblrMenuGuideView" owner:self options:nil];
+        guideView_ = (XQThumblrMenuGuideView *)[nib objectAtIndex:0];
+        [guideView_ setTranslatesAutoresizingMaskIntoConstraints:NO];
+        [self addSubview:guideView_];
+        [self addCompactConstraints:@[@"guideView_.top = self.top",
+                                      @"guideView_.bottom = self.bottom",
+                                      @"guideView_.left = self.left",
+                                      @"guideView_.right = self.right"]
+                            metrics:nil
+                              views:NSDictionaryOfVariableBindings(self,guideView_)];
+        guideView_.hidden = YES;
+    }
+    return self;
+}
+
+- (void)setThumblrMeunuDelegate:(id)delegate
+{
+    _delegate = delegate;
+}
+
 - (void)addMenuItemWithTitle:(NSString*)title andIcon:(UIImage*)icon andSelectedBlock:(CHTumblrMenuViewSelectedBlock)block
 {
-    CHTumblrMenuItemButton *button = [CHTumblrMenuItemButton TumblrMenuItemButtonWithTitle:title andIcon:icon andSelectedBlock:block];
+    CHTumblrMenuItemButton *button = [[CHTumblrMenuItemButton alloc] initWithTitle:title andIcon:icon andSelectedBlock:block];
     
     [button addTarget:self action:@selector(buttonTapped:) forControlEvents:UIControlEventTouchUpInside];
     [self addSubview:button];
     
     [buttons_ addObject:button];
+    
+    [self bringSubviewToFront:guideView_];
 }
 
 - (CGRect)frameForButtonAtIndex:(NSUInteger)index
 {
-    NSUInteger columnCount = 3;
+    NSUInteger columnCount = 4;
     NSUInteger columnIndex =  index % columnCount;
 
     NSUInteger rowCount = buttons_.count / columnCount + (buttons_.count%columnCount>0?1:0);
     NSUInteger rowIndex = index / columnCount;
 
     CGFloat itemHeight = (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) * rowCount + (rowCount > 1?(rowCount - 1) * CHTumblrMenuViewHorizontalMargin:0);
-    CGFloat offsetY = (self.bounds.size.height - itemHeight) / 2.0;
-    CGFloat verticalPadding = (self.bounds.size.width - CHTumblrMenuViewHorizontalMargin * 2 - CHTumblrMenuViewImageHeight * 3) / 2.0;
+    CGFloat offsetY = self.bounds.size.height - itemHeight - 26 - 49;
     
-    CGFloat offsetX = CHTumblrMenuViewHorizontalMargin;
+    CGFloat verticalPadding = (self.bounds.size.width - CHTumblrMenuViewImageHeight * columnCount) / (columnCount + 1);
+    
+    CGFloat offsetX = verticalPadding;
     offsetX += (CHTumblrMenuViewImageHeight+ verticalPadding) * columnIndex;
-    
     offsetY += (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight + CHTumblrMenuViewVerticalPadding) * rowIndex;
-
     
     return CGRectMake(offsetX, offsetY, CHTumblrMenuViewImageHeight, (CHTumblrMenuViewImageHeight+CHTumblrMenuViewTitleHeight));
-
 }
 
 - (void)layoutSubviews
@@ -155,10 +203,22 @@
 
 - (void)dismiss:(id)sender
 {
+    _animCount = 0;
+    
+    [self removeGestureRecognizer:ges];
+    
     [self dropAnimation];
-    double delayInSeconds = CHTumblrMenuViewAnimationTime  + CHTumblrMenuViewAnimationInterval * (buttons_.count + 1);
+    
+    dismissIcon_.hidden = YES;
+
+    if (_delegate && [_delegate respondsToSelector:@selector(CHTumblrMenuHidden)]) {
+        [_delegate CHTumblrMenuHidden];
+    }
+    
+    double delayInSeconds = CHTumblrMenuViewAnimationTime  + CHTumblrMenuViewAnimationInterval * (buttons_.count);
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        backgroundView_.hidden = YES;
         [self removeFromSuperview];
     });
 }
@@ -171,16 +231,14 @@
     dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
     dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
         btn.selectedBlock();
-
     });
 }
 
 
 - (void)riseAnimation
 {
-    NSUInteger columnCount = 3;
-    NSUInteger rowCount = buttons_.count / columnCount + (buttons_.count%columnCount>0?1:0);
-
+    _animCount = 0;
+    NSUInteger columnCount = 4;
 
     for (NSUInteger index = 0; index < buttons_.count; index++) {
         CHTumblrMenuItemButton *button = buttons_[index];
@@ -188,7 +246,7 @@
         CGRect frame = [self frameForButtonAtIndex:index];
         NSUInteger rowIndex = index / columnCount;
         NSUInteger columnIndex = index % columnCount;
-        CGPoint fromPosition = CGPointMake(frame.origin.x + CHTumblrMenuViewImageHeight / 2.0,frame.origin.y +  (rowCount - rowIndex + 2)*200 + (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) / 2.0);
+        CGPoint fromPosition = CGPointMake(frame.origin.x + CHTumblrMenuViewImageHeight / 2.0,frame.origin.y +  200 + (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) / 2.0);
         
         CGPoint toPosition = CGPointMake(frame.origin.x + CHTumblrMenuViewImageHeight / 2.0,frame.origin.y + (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) / 2.0);
         
@@ -212,9 +270,6 @@
         positionAnimation.delegate = self;
         
         [button.layer addAnimation:positionAnimation forKey:@"riseAnimation"];
-
-
-        
     }
 }
 
@@ -227,7 +282,7 @@
         NSUInteger rowIndex = index / columnCount;
         NSUInteger columnIndex = index % columnCount;
 
-        CGPoint toPosition = CGPointMake(frame.origin.x + CHTumblrMenuViewImageHeight / 2.0,frame.origin.y -  (rowIndex + 2)*200 + (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) / 2.0);
+        CGPoint toPosition = CGPointMake(frame.origin.x + CHTumblrMenuViewImageHeight / 2.0,frame.origin.y  + 200 + (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) / 2.0);
         
         CGPoint fromPosition = CGPointMake(frame.origin.x + CHTumblrMenuViewImageHeight / 2.0,frame.origin.y + (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) / 2.0);
         
@@ -250,16 +305,12 @@
         positionAnimation.delegate = self;
         
         [button.layer addAnimation:positionAnimation forKey:@"riseAnimation"];
-        
-        
-        
     }
 
 }
 
 - (void)animationDidStart:(CAAnimation *)anim
 {
-    NSUInteger columnCount = 3;
     if([anim valueForKey:CHTumblrMenuViewRriseAnimationID]) {
         NSUInteger index = [[anim valueForKey:CHTumblrMenuViewRriseAnimationID] unsignedIntegerValue];
         UIView *view = buttons_[index];
@@ -273,11 +324,10 @@
     }
     else if([anim valueForKey:CHTumblrMenuViewDismissAnimationID]) {
         NSUInteger index = [[anim valueForKey:CHTumblrMenuViewDismissAnimationID] unsignedIntegerValue];
-        NSUInteger rowIndex = index / columnCount;
 
         UIView *view = buttons_[index];
         CGRect frame = [self frameForButtonAtIndex:index];
-        CGPoint toPosition = CGPointMake(frame.origin.x + CHTumblrMenuViewImageHeight / 2.0,frame.origin.y -  (rowIndex + 2)*200 + (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) / 2.0);
+        CGPoint toPosition = CGPointMake(frame.origin.x + CHTumblrMenuViewImageHeight / 2.0,frame.origin.y + 200 + (CHTumblrMenuViewImageHeight + CHTumblrMenuViewTitleHeight) / 2.0);
         
         view.layer.position = toPosition;
     }
@@ -286,20 +336,14 @@
 
 - (void)show
 {
-    
     UIViewController *appRootViewController;
     UIWindow *window;
     
     window = [UIApplication sharedApplication].keyWindow;
-   
-        
     appRootViewController = window.rootViewController;
     
- 
-    
     UIViewController *topViewController = appRootViewController;
-    while (topViewController.presentedViewController != nil)
-    {
+    while (topViewController.presentedViewController != nil) {
         topViewController = topViewController.presentedViewController;
     }
     
@@ -307,11 +351,36 @@
         [[topViewController.view viewWithTag:CHTumblrMenuViewTag] removeFromSuperview];
     }
     
-    self.frame = topViewController.view.bounds;
+    self.frame = topViewController.view.frame;
     [topViewController.view addSubview:self];
+    
+    dismissIcon_.hidden = NO;
+    backgroundView_.hidden = NO;
+    
+    //添加手势
+    [self removeGestureRecognizer:ges];
+    [self addGestureRecognizer:ges];
     
     [self riseAnimation];
 }
 
 
+- (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)flag
+{
+    if(flag) {
+        _animCount += 1;
+        if(_animCount == 3) {
+            
+            if (_delegate && [_delegate respondsToSelector:@selector(CHTumblrMenuFinished)]) {
+                [_delegate CHTumblrMenuFinished];
+            }
+        }
+    }
+}
+
+#pragma mark - addGuideView
+-(void)addGuideView
+{
+    guideView_.hidden = NO;
+}
 @end

@@ -24,11 +24,36 @@
 //  THE SOFTWARE.
 
 #import <UIKit/UIKit.h>
+
+@protocol CHTumblrMenuViewDelegate;
+
 typedef void (^CHTumblrMenuViewSelectedBlock)(void);
 
 
 @interface CHTumblrMenuView : UIView<UIGestureRecognizerDelegate>
-@property (nonatomic, readonly)UIImageView *backgroundImgView;
+{
+    __unsafe_unretained id<CHTumblrMenuViewDelegate> _delegate;
+    
+    int  _animCount;
+    
+    UITapGestureRecognizer *ges;
+}
+
+- (void)setThumblrMeunuDelegate:(id)delegate;
 - (void)addMenuItemWithTitle:(NSString*)title andIcon:(UIImage*)icon andSelectedBlock:(CHTumblrMenuViewSelectedBlock)block;
 - (void)show;
+- (void)addGuideView;
+
 @end
+
+
+@protocol CHTumblrMenuViewDelegate <NSObject>
+
+- (void)CHTumblrMenuHidden;
+
+- (void)CHTumblrMenuFinished;
+
+
+@end
+
+
