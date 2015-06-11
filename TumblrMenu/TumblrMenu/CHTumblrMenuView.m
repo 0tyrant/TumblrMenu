@@ -92,7 +92,7 @@
         ges = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(dismiss:)];
         ges.delegate = self;
         
-        buttons_ = [[NSMutableArray alloc] initWithCapacity:4];
+        buttons_ = [[NSMutableArray alloc] initWithCapacity:3];
         
         _animCount = 0;
         
@@ -139,7 +139,7 @@
 
 - (CGRect)frameForButtonAtIndex:(NSUInteger)index
 {
-    NSUInteger columnCount = 4;
+    NSUInteger columnCount = 3;
     NSUInteger columnIndex =  index % columnCount;
 
     NSUInteger rowCount = buttons_.count / columnCount + (buttons_.count%columnCount>0?1:0);
@@ -221,7 +221,7 @@
 - (void)riseAnimation
 {
     _animCount = 0;
-    NSUInteger columnCount = 4;
+    NSUInteger columnCount = 3;
 
     for (NSUInteger index = 0; index < buttons_.count; index++) {
         CHTumblrMenuItemButton *button = buttons_[index];
